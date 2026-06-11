@@ -1,0 +1,85 @@
+---
+title: "Cillan"
+author: "MJ"
+date: "2026-06-11"
+output: html_document
+---
+
+A. K-means (single K)
+```{r ds1, echo = TRUE, warning = TRUE}
+# Read in the morphology data as a dataframe.
+library(ggplot2)
+library(dplyr)
+
+morphdata1 <- read.csv("C:/Users/Benito/Downloads/morphology_data.csv")
+
+head(morphdata1)
+str(morphdata1)
+```
+
+```{r ds2, echo = TRUE, warning = TRUE}
+# Remove the sex column.
+morphdata1_cleaned <- morphdata1[, !(names(morphdata1) %in% c("Pop", "Sex"))]
+```
+
+```{r ds3, echo = TRUE, warning = TRUE}
+# Ensure that the dataframe has no NAs.
+sum(is.na(morphdata1_cleaned))
+morphdata1_cleaned <- na.omit(morphdata1_cleaned)
+```
+
+```{r ds4, echo = TRUE, warning = TRUE}
+# Prior to performing K-means, standardize all values using the “scale” function.
+morphdata1_scaled <- scale(morphdata1_cleaned)
+```
+
+```{r ds5, echo = TRUE, warning = TRUE}
+# Perform K-means with 3 cluster centers using 25 initial random centroids.
+set.seed(123)
+km_3 <- kmeans(morphdata1_scaled, centers = 3, nstart = 25)
+```
+
+```{r ds6, echo = TRUE, warning = TRUE}
+# Show the cluster assignment and a summary of results by simply printing them to the console.
+print(km_3$cluster)
+```
+
+```{r ds7, echo = TRUE, warning = TRUE}
+# Create a scatter plot with points colored by the assigned cluster.
+
+plot(morphdata1_cleaned$SVL, morphdata1_cleaned$TD, 
+     col = km_3$cluster, pch = 19, 
+     main = "K-means Clustering (K=3)", 
+     xlab = "SVL", ylab = "TD")
+```
+
+B. K-means (loop)
+
+```{r ds8, echo = TRUE, warning = TRUE}
+# Now, create a loop function to perform K-means with cluster centers from 2 to 10.
+wss <- numeric(9)
+for (k in 2:10) {
+  km_loop <- kmeans(morphdata1_scaled, centers = k, nstart = 25)
+  wss[k-1] <- km_loop$tot.withinss
+}
+```
+
+```{r ds9, echo = TRUE, warning = TRUE}
+# From the output of your loop function, create an elbow curve plot to determine the optimal K.
+plot(2:10, wss, type = "b", pch = 19, 
+     xlab = "Number of clusters (K)", ylab = "WSS")
+```
+
+```{r ds10, echo = TRUE, warning = TRUE}
+# Recreate steps 6–8 above using the optimal K determined by the elbow curve
+set.seed(123)
+optimal_k <- 4
+km_opt <- kmeans(morphdata1_scaled, centers = optimal_k, nstart = 25)
+print(km_opt$cluster)
+
+plot(morphdata1_cleaned$SVL, morphdata1_cleaned$TD, 
+      col = km_opt$cluster, pch = 19, 
+      main = "K-means Clustering with Optimal K", 
+      xlab = "SVL", ylab = "TD")
+```
+
