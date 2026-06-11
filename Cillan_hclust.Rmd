@@ -1,0 +1,94 @@
+---
+title: "Cillan_hclust.rmd."
+author: "MJ"
+date: "2026-06-10"
+output: html_document
+---
+
+# A. Hierarchical clustering
+
+```{r ds1, echo = TRUE, warning = TRUE}
+# Read in the morphology data as a dataframe.
+
+morphdata <- read.csv("C:/Users/Benito/Downloads/morphology_data.csv")
+
+head(morphdata)
+str(morphdata)
+```
+
+```{r ds2, echo = TRUE, warning = TRUE}
+# Remove unnecessary columns (e.g., sex, pop).
+
+morphdata_cleaned <- morphdata[, !(names(morphdata) %in% c("Pop", "Sex"))]
+```
+
+```{r ds3, echo = TRUE, warning = TRUE}
+# Ensure that the dataframe has no NAs.
+
+sum(is.na(morphdata_cleaned))
+morphdata_cleaned <- na.omit(morphdata_cleaned)
+```
+
+```{r ds4, echo = TRUE, warning = TRUE}
+# Standardize Variables
+
+morphdata_scaled <- scale(morphdata_cleaned)
+head(morphdata_scaled)
+```
+
+```{r ds5, echo = TRUE, warning = TRUE}
+# Before performing hierarchical clustering, calculate the “Euclidean distance” and use it as your input.
+
+library(cluster)
+dist_matrix <- dist(morphdata_cleaned, method = "euclidean")
+```
+
+```{r ds6, echo = TRUE, warning = TRUE}
+# Perform hierarchical clustering using Ward’s and Single Linkage methods.Create a for loop function to explore Ks from 2 to 10 for each method using the Silhouette score and display the results with a plot.
+
+k_range <- 2:10
+ward_sil <- numeric(length(k_range))
+single_sil <- numeric(length(k_range))
+for (i in seq_along(k_range)){
+  k <- k_range[i]
+
+ward_hc <- hclust(dist_matrix, method = "ward.D2")
+ward_sil[i] <- mean(silhouette(cutree(ward_hc, k), dist_matrix)[, 3])
+
+single_hc <- hclust(dist_matrix, method = "single")
+single_sil[i] <- mean(silhouette(cutree(single_hc, k), dist_matrix)[, 3])
+}
+
+plot(k_range, ward_sil, type = "b", pch = 19, col = "pink", 
+     ylim = c(min(c(ward_sil, single_sil)), max(c(ward_sil, single_sil))),
+     xlab = "Number of clusters (K)", 
+     ylab = "Silhouette Width",
+     main = "Silhouette Scores: Ward vs. Single Linkage")
+
+lines(k_range, single_sil, type = "b", pch = 19, col = "yellow")
+legend("topright", legend = c("Ward's", "Single Linkage"), 
+       col = c("pink", "yellow"), lty = 1, pch = 19)
+
+```
+
+
+```{r ds8, echo = TRUE, warning = TRUE}
+# Generate a dendrogram for each method, highlighting the optimal K with colored boxes.
+ward_hclust <- hclust(dist_matrix, method = "ward.D2")
+single_hclust <- hclust(dist_matrix, method = "single")
+plot(ward_hclust, main = "Dendrogram: Ward D2", sub = "", xlab = "Lizard Index",ylab = "Height")
+rect.hclust(ward_hclust, k = 3, border = c("red","blue","green"))
+plot(single_hclust, main = "Dendrogram: Single Linkage", xlab = "Lizard Index", sub = "", ylab = "Height")
+rect.hclust(single_hclust, k = 3, border = c("red","blue","green"))
+```
+
+# B. K-means vs. Hierarchical
+
+```{r ref1, echo = TRUE, warning = TRUE}
+# Revisit your K-means outputs from the previous activity and compare how the clusters were determined.
+# Are the clusters consistent? If not, what do you think causes this, and how might it influence your interpretation of biological patterns in the data?
+
+#I think K-means and hierarchical clustering would often generate differing results that may arise because K-means requires a predefined K, whereas hierarchical clustering (from the way I understand this activity) depends on a linkage method. A central point or average is also used in K-means, while hierarchical clustering produces a branching structure with connecting points.
+
+#Inconsistencies may imply an unclear distinction when analyzing populations or morphological variation. With this, utilizing on one method can be unreliable, thus supporting the need to perform different tests to clearly understand biological patterns.
+```
